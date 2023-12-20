@@ -14,6 +14,20 @@
 */
 
 function calculateTotalSpentByCategory(transactions) {
+/*
+// using map for iteration and get the return value , but return value will endup as array: its a hassle to check each obj property as element in an array.
+// the return value is obj here
+  let result = {};
+transactions.map(seggregateFn);
+function seggregateFn(obj){
+  let {category, price} = obj; //destruturing obj
+  if(!(category in result))
+    result[category]= {category , totalSpent: price};
+  else
+    result[category].totalSpent +=price;
+}
+return Object.values(result);
+*/
   const result = {}
   transactions.forEach(Obj =>{
     const {category, price} = Obj; // destructuring each object
