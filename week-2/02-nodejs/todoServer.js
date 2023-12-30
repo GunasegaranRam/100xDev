@@ -10,26 +10,26 @@
     Description: Returns a list of all todo items.
     Response: 200 OK with an array of todo items in JSON format.
     Example: GET http://localhost:3000/todos
-    
+
   2.GET /todos/:id - Retrieve a specific todo item by ID
     Description: Returns a specific todo item identified by its ID.
     Response: 200 OK with the todo item in JSON format if found, or 404 Not Found if not found.
     Example: GET http://localhost:3000/todos/123
-    
+
   3. POST /todos - Create a new todo item
     Description: Creates a new todo item.
     Request Body: JSON object representing the todo item.
     Response: 201 Created with the ID of the created todo item in JSON format. eg: {id: 1}
     Example: POST http://localhost:3000/todos
     Request Body: { "title": "Buy groceries", "completed": false, description: "I should buy groceries" }
-    
+
   4. PUT /todos/:id - Update an existing todo item by ID
     Description: Updates an existing todo item identified by its ID.
     Request Body: JSON object representing the updated todo item.
     Response: 200 OK if the todo item was found and updated, or 404 Not Found if not found.
     Example: PUT http://localhost:3000/todos/123
     Request Body: { "title": "Buy groceries", "completed": true }
-    
+
   5. DELETE /todos/:id - Delete a todo item by ID
     Description: Deletes a todo item identified by its ID.
     Response: 200 OK if the todo item was found and deleted, or 404 Not Found if not found.
@@ -39,11 +39,84 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
+  const fs = require('fs')
   const express = require('express');
   const bodyParser = require('body-parser');
-  
   const app = express();
-  
+  const dir = './todos.json';
   app.use(bodyParser.json());
-  
-  module.exports = app;
+
+  app.get('/todos',(req,res) => {
+  fs.readFile(dir,'utf-8',(err,data)=>{
+    return res.status(200).json(JSON.parse(data));
+   })
+  })
+
+  app.get('/todos/:id',(req,res) => {
+    fs.readFile(dir,'utf-8',(err,data)=>{
+      const jsData = JSON.parse(data);
+      const id = parseInt(req.params.id);
+      const fil = jsData.find(val=>val.id===id)
+      if(fil) return res.status(200).json(fil);
+      else return res.status(404).send("<h1 style= 'font-size: 100px; text-align: center'>Not Found</h1>");
+    })})
+
+  app.post('/todos',(req,res) => {
+    const bodyData = req.body;
+    fs.readFile(dir,'utf-8',(err,data)=>{
+      const jsData =JSON.parse(data);
+      const nextId = jsData.reduce((maxId, todo) => Math.max(maxId, todo.id), 0) + 1;
+      jsData.push({"id": nextId,...bodyData})
+      fs.writeFile(dir,JSON.stringify(jsData),(err)=>{
+      if(err)
+         return res.status(400).send(err);
+      else
+         return res.status(201).json({"id": nextId});
+        })
+      })
+     })
+
+  app.put('/todos/:id',(req,res) => {
+  const id = parseInt(req.params.id);
+  const bodyData = req.body;
+    fs.readFile(dir,'utf-8',(err,data)=>{
+      const jsData = JSON.parse(data);
+      const index = jsData.findIndex((obj)=>obj.id===id);
+      if(index===-1) return res.status(404).send("<h1 style= 'font-size: 100px; text-align: center'>Not Found</h1>")
+      else{
+      jsData[index]={
+        id: id,
+         ...bodyData
+      }
+     fs.writeFile(dir,JSON.stringify(jsData),(err)=>{
+       if(err)
+         return res.status(400).send(err);
+       else
+        return res.status(200).send("Updated successfully");
+        })
+      }
+    })
+  })
+  app.delete('/todos/:id',(req,res) => {
+    const id = parseInt(req.params.id);
+      fs.readFile(dir,'utf-8',(err,data)=>{
+        if(err) throw err;
+        const jsData = JSON.parse(data);
+        const index = jsData.findIndex((obj)=>obj.id===id);
+        if(index===-1) return res.status(404).send("<h1 style= 'font-size: 100px; text-align: center'>Not Found</h1>")
+        else{
+        const   js = jsData.filter((obj)=>obj.id!==id)
+       fs.writeFile(dir,JSON.stringify(js),(err)=>{
+         if(err)
+           return res.status(400).send(err);
+         else
+           return res.status(200).send("Deleted successfully");
+          })
+        }
+      })
+    })
+  app.all('*',(req,res)=>{
+    res.status(404).send("<h1 style= 'font-size: 100px; text-align: center'>Route Not Found</h1>")
+  })
+
+module.exports = app;
